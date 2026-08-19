@@ -74,4 +74,3 @@ colnames(a) <- data_wide_reduced$country_iso3
 
 print(round(a, 2))
 
-
