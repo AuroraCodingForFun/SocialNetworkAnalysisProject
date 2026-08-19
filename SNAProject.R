@@ -28,6 +28,14 @@ df_reduced <- df %>%
     "GRC", "FIN", "CZE", "ALB"
   ))
 
+#Dataframe orizzontale
+data_wide_reduced <- df_reduced %>%
+  select(country_iso3, year, value) %>%
+  pivot_wider(
+    names_from = year,
+    values_from = value
+  )
+
 #Grafo a linee bello 
 ggplot(
   df_reduced %>% filter(country_iso3 %in% country_iso3),
@@ -41,18 +49,29 @@ ggplot(
   ) +
   theme_classic()
 
-#Trova minima valueper ogni anno
-min<-df_reduced %>%
+#Trova minima value per ogni anno
+minn<-df_reduced %>%
   group_by(year) %>%
   slice_min(value, n = 1, with_ties = FALSE) %>%
   select(year, country_name, country_iso3, value) #adoro il mio paese T.T
 print(min, n=50)
 
 #Trova minima valueper ogni anno
-max<-df_reduced %>%
+maxx<-df_reduced %>%
   group_by(year) %>%
   slice_max(value, n = 1, with_ties = FALSE) %>%
   select(year, country_name, country_iso3, value) #DC è solo la finlandia e la francia
 print(max, n=50)
+
+#matrice
+a <- data_wide_reduced %>%
+  select(-country_iso3) %>%
+  t() %>%
+  cor(use = "pairwise.complete.obs")
+
+rownames(a) <- data_wide_reduced$country_iso3
+colnames(a) <- data_wide_reduced$country_iso3
+
+print(round(a, 2))
 
 
