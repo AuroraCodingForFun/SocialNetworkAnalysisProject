@@ -96,7 +96,6 @@ ggraph(g, layout = "bipartite") +
     ),
     size = 7
   ) +
-
   
   # ETICHETTE
   geom_node_text(
@@ -112,19 +111,29 @@ ggraph(g, layout = "bipartite") +
     range = c(0.1, 10)
   ) +
   
-  # Forme diverse per paesi/ani
+  # Forme paesi/anni
   scale_shape_manual(
+    name = "Tipo di nodo",
     values = c(
       "FALSE" = 18,
       "TRUE" = 16
+    ),
+    labels = c(
+      "FALSE" = "Paese",
+      "TRUE" = "Anno"
     )
   ) +
   
   # Colori paesi/anni
   scale_colour_manual(
+    name = "Tipo di nodo",
     values = c(
       "FALSE" = "blue",
       "TRUE" = "pink"
+    ),
+    labels = c(
+      "FALSE" = "Paese",
+      "TRUE" = "Anno"
     )
   ) +
   
@@ -132,7 +141,6 @@ ggraph(g, layout = "bipartite") +
     title = "Rete Paese–Anno della partecipazione femminile STEM",
     subtitle = "Lo spessore degli archi rappresenta la percentuale di donne laureate in STEM",
     edge_width = "% donne STEM"
-    
   ) +
   
   theme_void() +
@@ -145,6 +153,7 @@ ggraph(g, layout = "bipartite") +
     ),
     plot.subtitle = element_text(
       size = 11,
+      face = "italic",
       hjust = 0.5
     ),
     legend.position = "top"
