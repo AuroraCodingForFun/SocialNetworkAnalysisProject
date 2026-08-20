@@ -43,14 +43,14 @@ eurostat_piccolo <- eurostat %>%
 
 #Grafo 1 a linee 
 ggplot(
-  hugface_piccolo,
-  aes(x = year, y = `Share of the labor force that is female`, color = country_iso3)
+  eurostat_piccolo,
+  aes(x = TIME_PERIOD, y = `OBS_VALUE`, color = Geopolitical.entity..reporting.)
 )  +
   geom_line(linewidth = 1) +
   labs(
-    title = "Traiettorie della partecipazione femminile alla forza lavoro",
+    title = "% of all tertiary education graduates in STEM education fields",
     x = "Anno",
-    y = "% della forza lavoro ♀"
+    y = "% lauree ♀ in STEM"
   ) +
   theme_classic()
 
