@@ -1,5 +1,7 @@
 library(dplyr)
 library(tidyr)
+install.packages("graphlayouts", type = "binary")
+library(graphlayouts)
 library(ggplot2)
 library(igraph)
 library(ggraph)
@@ -8,39 +10,42 @@ library(arrow)
 
 #PRIMA SOURCE
 url <- "https://huggingface.co/datasets/electricsheepeurope/europe-owid-proportion-of-labor-force-who-are-women/resolve/main/data/train-00000-of-00001.parquet"
-df_owid <- read_parquet(url)
-head(df_owid)
+hugface <- read_parquet(url)
+head(hugface)
 
-#Dataframe con un nome diverso perchè Share of the labor force that is female è troppo lungo
-df <- df_owid %>%
-  select(
-    country_name,
-    country_iso3,
-    year,
-    value = `Share of the labor force that is female`
-  ) %>%
-  filter(!is.na(value))
+#Seconda surce GITHUB
+github<- read.csv("Merged_Dataset.csv")
+
+#Ultima surce
+eurostat<- read.csv("Eurostat.csv")
 
 #Dataframe per solo le nazioni che mi interessano
-df_reduced <- df %>%
+hugface_piccolo <- hugface %>%
   filter(country_iso3 %in% c(
     "ITA", "FRA", "NOR", "IRL",
-    "GRC", "FIN", "CZE", "ALB"
+    "GRC", "FIN", "ALB", "DEU"
   ))
 
-#Dataframe orizzontale
-data_wide_reduced <- df_reduced %>%
-  select(country_iso3, year, value) %>%
-  pivot_wider(
-    names_from = year,
-    values_from = value
-  )
+#Dataframe per solo le nazioni che mi interessano
+github_piccolo <- github %>%
+  filter(Country %in% c(
+    "Italy", "France", "Norway", "Ireland",
+    "Greece", "Finland", "Albania", "Germany"
+  ))
 
-#Grafo a linee bello 
+#Dataframe per solo le nazioni che mi interessano
+eurostat_piccolo <- eurostat %>%
+  filter(Geopolitical.entity..reporting. %in% c(
+    "Italy", "France", "Norway", "Ireland",
+    "Greece", "Finland", "Albania", "Germany"
+  ))
+
+
+#Grafo 1 a linee 
 ggplot(
-  df_reduced %>% filter(country_iso3 %in% country_iso3),
-  aes(x = year, y = value, color = country_iso3)
-) +
+  hugface_piccolo,
+  aes(x = year, y = `Share of the labor force that is female`, color = country_iso3)
+)  +
   geom_line(linewidth = 1) +
   labs(
     title = "Traiettorie della partecipazione femminile alla forza lavoro",
@@ -50,27 +55,97 @@ ggplot(
   theme_classic()
 
 #Trova minima value per ogni anno
-minn<-df_reduced %>%
+minn<-hugface_piccolo %>%
   group_by(year) %>%
-  slice_min(value, n = 1, with_ties = FALSE) %>%
-  select(year, country_name, country_iso3, value) #adoro il mio paese T.T
-print(min, n=50)
+  slice_min(`Share of the labor force that is female`, n = 1, with_ties = FALSE) %>%
+  select(year, country_name, country_iso3, `Share of the labor force that is female`) #adoro il mio paese T.T
+print(minn, n=50)
 
 #Trova minima valueper ogni anno
-maxx<-df_reduced %>%
+maxx<-hugface_piccolo %>%
   group_by(year) %>%
-  slice_max(value, n = 1, with_ties = FALSE) %>%
-  select(year, country_name, country_iso3, value) #DC è solo la finlandia e la francia
-print(max, n=50)
+  slice_max(`Share of the labor force that is female`, n = 1, with_ties = FALSE) %>%
+  select(year, country_name, country_iso3, `Share of the labor force that is female`) #DC è solo la finlandia e la francia
+print(maxx, n=50)
 
-#matrice
-a <- data_wide_reduced %>%
-  select(-country_iso3) %>%
-  t() %>%
-  cor(use = "pairwise.complete.obs")
+#Grafo 2
 
-rownames(a) <- data_wide_reduced$country_iso3
-colnames(a) <- data_wide_reduced$country_iso3
+# Archi Paese -> Anno
+edges <- github_piccolo %>%
+  transmute(
+    from = Country,
+    to = as.character(Year),
+    weight = Female_STEM_Graduates
+  )
 
-print(round(a, 2))
+# grafo
+ggraph(g, layout = "bipartite") +
+  
+  # ARCHI
+  geom_edge_link(
+    aes(width = weight),
+    alpha = 0.5,
+    colour = "grey50"
+  ) +
+  
+  # NODI
+  geom_node_point(
+    aes(
+      shape = type,
+      colour = type
+    ),
+    size = 7
+  ) +
 
+  
+  # ETICHETTE
+  geom_node_text(
+    aes(label = name),
+    repel = TRUE,
+    size = 3,
+    box.padding = 1,
+    point.padding = 0.25
+  ) +
+  
+  # Spessore archi
+  scale_edge_width(
+    range = c(0.1, 10)
+  ) +
+  
+  # Forme diverse per paesi/ani
+  scale_shape_manual(
+    values = c(
+      "FALSE" = 18,
+      "TRUE" = 16
+    )
+  ) +
+  
+  # Colori paesi/anni
+  scale_colour_manual(
+    values = c(
+      "FALSE" = "blue",
+      "TRUE" = "pink"
+    )
+  ) +
+  
+  labs(
+    title = "Rete Paese–Anno della partecipazione femminile STEM",
+    subtitle = "Lo spessore degli archi rappresenta la percentuale di donne laureate in STEM",
+    edge_width = "% donne STEM"
+    
+  ) +
+  
+  theme_void() +
+  
+  theme(
+    plot.title = element_text(
+      size = 18,
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      hjust = 0.5
+    ),
+    legend.position = "top"
+  )
