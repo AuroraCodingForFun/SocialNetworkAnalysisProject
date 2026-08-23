@@ -8,13 +8,23 @@ library(ggraph)
 library(scales)
 library(arrow)
 
+#DATASET
 url <- "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2022/2022-11-01/horror_movies.csv"
 horrors <- read.csv(url, stringsAsFactors = FALSE)
 head(horrors);
 
+#Pulizia dataset per avere solo film horror
+film_horror <- horrors[horrors$genre_names != "" & !is.na(horrors$genre_names), ]
 
+#Lista generi dei film per fare il grafo bipartito
+lista_generi <- strsplit(film_horror$genre_names, ",\\s*")
 
-
+#Database di coppia tra film e generi
+coppia_film_generi <- data.frame(
+  film = rep(film_horror$title, sapply(lista_generi, length)),
+  genere = unlist(lista_generi),
+  stringsAsFactors = FALSE
+)
 
 
 
