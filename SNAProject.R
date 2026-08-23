@@ -26,8 +26,23 @@ coppia_film_generi <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# matrice di adiacenza Bipartita 
+mat_bipartita <- table(coppia_film_generi$film, coppia_film_generi$genere)
+#matrice unipartita genere e genere
+mat_cooccorrenza <- t(mat_bipartita) %*% mat_bipartita
 
-
+# Grafo matrice di adiacenza
+g_tropes <- graph_from_adjacency_matrix(
+  mat_cooccorrenza, 
+  mode = "undirected", 
+  weighted = TRUE, 
+  diag = FALSE
+)
+ggraph(g_tropes, layout = "stress") + 
+  geom_edge_link(aes(edge_alpha = weight)) + 
+  geom_node_point(size = 5) + 
+  geom_node_text(aes(label = name), repel = TRUE) + 
+  theme_void()
 
 
 
