@@ -38,10 +38,32 @@ g_tropes <- graph_from_adjacency_matrix(
   weighted = TRUE, 
   diag = FALSE
 )
-ggraph(g_tropes, layout = "stress") + 
-  geom_edge_link(aes(edge_alpha = weight)) + 
-  geom_node_point(size = 5) + 
-  geom_node_text(aes(label = name), repel = TRUE) + 
+ggraph(g_tropes, layout = "kk") + 
+  
+  geom_edge_link(
+    aes(width = weight),
+    alpha = 0.5,
+    colour = "red") + 
+  
+  scale_edge_width(
+    range = c(0.1, 8)
+  ) +
+  
+  geom_node_point(
+    size = 3,
+    ) + 
+  geom_node_text(
+    aes(label = name), 
+    repel = TRUE,
+    size = 3,
+    box.padding = 0.2,
+    point.padding = 0.1)+ 
+  
+  labs(
+    title = "Rete di cooccorrenza tra generi",
+    subtitle = "Lo spessore degli archi rappresenta la frequenza di film in cui accade",
+    edge_width = "Film con questi generi"
+  ) +
   theme_void()
 
 
