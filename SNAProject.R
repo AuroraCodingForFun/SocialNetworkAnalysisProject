@@ -8,6 +8,30 @@ library(ggraph)
 library(scales)
 library(arrow)
 
+url <- "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2022/2022-11-01/horror_movies.csv"
+horrors <- read.csv(url, stringsAsFactors = FALSE)
+head(horrors);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#DELETE ALL
 #PRIMA SOURCE
 url <- "https://huggingface.co/datasets/electricsheepeurope/europe-owid-proportion-of-labor-force-who-are-women/resolve/main/data/train-00000-of-00001.parquet"
 hugface <- read_parquet(url)
@@ -44,9 +68,14 @@ eurostat_piccolo <- eurostat %>%
 #Grafo 1 a linee 
 ggplot(
   eurostat_piccolo,
-  aes(x = TIME_PERIOD, y = `OBS_VALUE`, color = Geopolitical.entity..reporting.)
-)  +
+  aes(
+    x = TIME_PERIOD,
+    y = OBS_VALUE,
+    color = Geopolitical.entity..reporting.
+  )
+) +
   geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
   labs(
     title = "% of all tertiary education graduates in STEM education fields",
     x = "Anno",
@@ -55,17 +84,17 @@ ggplot(
   theme_classic()
 
 #Trova minima value per ogni anno
-minn<-hugface_piccolo %>%
-  group_by(year) %>%
-  slice_min(`Share of the labor force that is female`, n = 1, with_ties = FALSE) %>%
-  select(year, country_name, country_iso3, `Share of the labor force that is female`) #adoro il mio paese T.T
+minn<-eurostat_piccolo %>%
+  group_by(TIME_PERIOD) %>%
+  slice_min(`OBS_VALUE`, n = 1, with_ties = FALSE) %>%
+  select(TIME_PERIOD, Geopolitical.entity..reporting., OBS_VALUE)
 print(minn, n=50)
 
 #Trova minima valueper ogni anno
-maxx<-hugface_piccolo %>%
-  group_by(year) %>%
-  slice_max(`Share of the labor force that is female`, n = 1, with_ties = FALSE) %>%
-  select(year, country_name, country_iso3, `Share of the labor force that is female`) #DC è solo la finlandia e la francia
+maxx<-eurostat_piccolo %>%
+  group_by(TIME_PERIOD) %>%
+  slice_max(OBS_VALUE, n = 1, with_ties = FALSE) %>%
+  select(TIME_PERIOD, Geopolitical.entity..reporting., OBS_VALUE) 
 print(maxx, n=50)
 
 #Grafo 2
@@ -75,7 +104,7 @@ edges <- github_piccolo %>%
   transmute(
     from = Country,
     to = as.character(Year),
-    weight = Female_STEM_Graduates
+    weight = Female_Researchers
   )
 
 # grafo
@@ -138,8 +167,8 @@ ggraph(g, layout = "bipartite") +
   ) +
   
   labs(
-    title = "Rete Paese–Anno della partecipazione femminile STEM",
-    subtitle = "Lo spessore degli archi rappresenta la percentuale di donne laureate in STEM",
+    title = "Rete Paese–Anno della percentuale di ricercatrici nell'ambito STEM",
+    subtitle = "Lo spessore degli archi rappresenta la percentuale di donne ricercatrici in STEM",
     edge_width = "% donne STEM"
   ) +
   
@@ -158,3 +187,22 @@ ggraph(g, layout = "bipartite") +
     ),
     legend.position = "top"
   )
+
+#Grafo 3 
+ggplot(
+  hugface_piccolo,
+  aes(
+    x = year,
+    y = `Share of the labor force that is female`,
+    color = country_iso3
+  )
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "% donne nella forza lavoro",
+    x = "Anno",
+    y = "% donne",
+    color = "Paese"
+  ) +
+   theme_classic() 
