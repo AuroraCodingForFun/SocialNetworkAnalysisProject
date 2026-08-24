@@ -15,19 +15,10 @@ head(horrors);
 
 #dataset2
 url2 <- "https://raw.githubusercontent.com/sundeepblue/movie_rating_prediction/master/movie_metadata.csv"
-imdb_data <- read.csv(url, stringsAsFactors = FALSE)
+tropes <- read.csv(url2, stringsAsFactors = FALSE)
 
 #Pulizia dataset per avere solo film horror
-film_horror <- horrors[horrors$genre_names != "" & !is.na(horrors$genre_names), ]
-
-# 2. Lista di tropes/archetipi che prendiamo in considerazione
-horror_tropes_list <- c(
-  "ghost", "demon", "possession", "haunted", "vampire", "zombie", 
-  "monster", "killer", "slasher", "murder", "witch", "curse", 
-  "alien", "survival", "cabin", "doll", "psychopath", "gore",
-  "cabin", "asylum", "hospital", "exorcism", "cult", "satanic",
-  "virus", "infection", "cannibal", "creature", "haunting", "serial killer"
-)
+htropes <- tropes %>% filter(grepl("Horror", genres))
 
 #Database di coppia tra film e generi
 coppia_film_generi <- data.frame(
