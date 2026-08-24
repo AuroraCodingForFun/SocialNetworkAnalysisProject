@@ -18,17 +18,20 @@ url2 <- "https://raw.githubusercontent.com/sundeepblue/movie_rating_prediction/m
 tropes <- read.csv(url2, stringsAsFactors = FALSE)
 
 #Pulizia dataset per avere solo film horror
-htropes <- tropes %>% filter(grepl("Horror", genres))
+htropes <- tropes[tropes$plot_keywords != "" & !is.na(tropes$plot_keywords) & grepl("Horror", tropes$genres), ]
 
-#Database di coppia tra film e generi
-coppia_film_generi <- data.frame(
-  film = rep(film_horror$title, sapply(lista_generi, length)),
-  genere = unlist(lista_generi),
+#Dividiamo le keyword separate
+lista_tropes <- strsplit(htropes$plot_keywords, "\\|")
+
+#Creazione della tabella di coppia (film - trope)
+coppia_film_tropes <- data.frame(
+  film = rep(htropes$movie_title, sapply(lista_tropes, length)),
+  trope = trimws(unlist(lista_tropes)),
   stringsAsFactors = FALSE
 )
 
 # matrice di adiacenza Bipartita 
-mat_bipartita <- table(coppia_film_generi$film, coppia_film_generi$genere)
+mat_bipartita <- table(coppia_film_tropes$film, coppia_film_tropes$trope)
 #matrice unipartita genere e genere
 mat_cooccorrenza <- t(mat_bipartita) %*% mat_bipartita
 
@@ -61,9 +64,9 @@ ggraph(g_tropes, layout = "kk") +
     point.padding = 0.1)+ 
   
   labs(
-    title = "Rete di cooccorrenza tra generi",
+    title = "Rete di cooccorrenza tra tropes",
     subtitle = "Lo spessore degli archi rappresenta la frequenza di film in cui accade",
-    edge_width = "Film con questi generi"
+    edge_width = "Film con questi tropes"
   ) +
   theme_void()
 
