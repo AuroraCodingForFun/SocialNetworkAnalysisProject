@@ -7,6 +7,7 @@ library(igraph)
 library(ggraph)
 library(scales)
 library(arrow)
+library(RColorBrewer)
 
 #DATASET 1
 url <- "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2022/2022-11-01/horror_movies.csv"
@@ -35,13 +36,28 @@ mat_bipartita <- table(coppia_film_tropes$film, coppia_film_tropes$trope)
 #matrice unipartita genere e genere
 mat_cooccorrenza <- t(mat_bipartita) %*% mat_bipartita
 
-# Grafo matrice di adiacenza
+# Grafo1 matrice di adiacenza
 g_tropes <- graph_from_adjacency_matrix(
   mat_cooccorrenza, 
   mode = "undirected", 
   weighted = TRUE, 
   diag = FALSE
 )
+
+gg_tropes <- graph_from_adjacency_matrix(
+  mat_cooccorrenza, 
+  mode = "undirected", 
+  weighted = TRUE, 
+  diag = FALSE
+)
+
+g_tropes <- delete_edges(g_tropes, E(g_tropes)[weight < 4])
+g_tropes <- delete_vertices(g_tropes, V(g_tropes)[degree(g_tropes) == 0])
+
+gg_tropes <- delete_edges(gg_tropes, E(gg_tropes)[weight < 10])
+gg_tropes <- delete_vertices(gg_tropes, V(gg_tropes)[degree(gg_tropes) == 0])
+
+#GRAFO1
 ggraph(g_tropes, layout = "kk") + 
   
   geom_edge_link(
@@ -54,13 +70,13 @@ ggraph(g_tropes, layout = "kk") +
   ) +
   
   geom_node_point(
-    size = 3,
+    size = 1,
     ) + 
   geom_node_text(
     aes(label = name), 
     repel = TRUE,
     size = 3,
-    box.padding = 0.2,
+    box.padding = 0.15,
     point.padding = 0.1)+ 
   
   labs(
@@ -70,9 +86,41 @@ ggraph(g_tropes, layout = "kk") +
   ) +
   theme_void()
 
+#GRAFO 2
+ggraph(gg_tropes, layout = "kk") + 
+  
+  geom_edge_link(
+    aes(width = weight),
+    alpha = 0.5,
+    colour = "blue") + 
+  
+  scale_edge_width(
+    range = c(0.1, 8)
+  ) +
+  
+  geom_node_point(
+    size = 1,
+  ) + 
+  geom_node_text(
+    aes(label = name), 
+    repel = TRUE,
+    size = 3,
+    box.padding = 0.15,
+    point.padding = 0.1)+ 
+  
+  labs(
+    title = "Rete di cooccorrenza tra tropes",
+    subtitle = "Lo spessore degli archi rappresenta la frequenza di film in cui accade",
+    edge_width = "Film con questi tropes"
+  ) +
+  theme_void()
 
-
-
+#Trova max TROPE (Death, ma dai)
+top_50_tropes <- coppia_film_tropes %>%
+  count(trope, sort = TRUE) %>%
+  slice_max(n, n = 50)
+head(top_50_tropes, 50)
+print(top_50_tropes)
 
 
 
