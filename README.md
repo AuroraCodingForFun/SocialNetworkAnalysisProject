@@ -5,3 +5,4 @@ Rplot01.png                               ->Grafo 2
 SNAProject.R                              ->Code R
 Social Network Analysis Project.pdf       ->Presentation and discussion
 SocialNetworkAnalysisProject.Rproj        ->Rproj
+.
