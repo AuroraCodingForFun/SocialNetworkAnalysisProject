@@ -86,222 +86,97 @@ ggraph(g_tropes, layout = "kk") +
   ) +
   theme_void()
 
+#Trova max TROPE
+
+trope_stats <- data.frame(
+  trope = V(g_tropes)$name,
+  degree = degree(g_tropes),
+  strength = strength(g_tropes, weights = E(g_tropes)$weight)
+) %>%
+  arrange(desc(strength))
+
+head(trope_stats, 50)
+
 #GRAFO 2
-ggraph(gg_tropes, layout = "kk") + 
-  
-  geom_edge_link(
-    aes(width = weight),
-    alpha = 0.5,
-    colour = "blue") + 
-  
-  scale_edge_width(
-    range = c(0.1, 8)
-  ) +
-  
-  geom_node_point(
-    size = 1,
-  ) + 
-  geom_node_text(
-    aes(label = name), 
-    repel = TRUE,
-    size = 3,
-    box.padding = 0.15,
-    point.padding = 0.1)+ 
-  
+
+#Community detection
+set.seed(123)
+comm <- cluster_louvain(g_tropes, weights = E(g_tropes)$weight)
+
+V(g_tropes)$community <- membership(comm)
+
+cat("Numero di community trovate:", length(unique(membership(comm))), "\n")
+cat("Modularità della partizione:", modularity(comm), "\n")
+
+#Matrice di densità tra cluster
+n_comm <- length(unique(membership(comm)))
+dens_matrix <- matrix(0, nrow = n_comm, ncol = n_comm)
+rownames(dens_matrix) <- 1:n_comm
+colnames(dens_matrix) <- 1:n_comm
+
+edge_list <- as_data_frame(g_tropes, what = "edges")
+edge_list$from_comm <- V(g_tropes)$community[match(edge_list$from, V(g_tropes)$name)]
+edge_list$to_comm   <- V(g_tropes)$community[match(edge_list$to, V(g_tropes)$name)]
+
+comm_sizes <- table(V(g_tropes)$community)
+
+for (i in 1:n_comm) {
+  for (j in 1:n_comm) {
+    if (i == j) {
+      n_nodes <- comm_sizes[as.character(i)]
+      possibili <- n_nodes * (n_nodes - 1) / 2
+      reali <- sum(edge_list$from_comm == i & edge_list$to_comm == i)
+      dens_matrix[i, j] <- ifelse(possibili > 0, reali / possibili, 0)
+    } else {
+      n_i <- comm_sizes[as.character(i)]
+      n_j <- comm_sizes[as.character(j)]
+      possibili <- n_i * n_j
+      reali <- sum((edge_list$from_comm == i & edge_list$to_comm == j) |
+                     (edge_list$from_comm == j & edge_list$to_comm == i))
+      dens_matrix[i, j] <- ifelse(possibili > 0, reali / possibili, 0)
+    }
+  }
+}
+
+dens_df <- as.data.frame(as.table(dens_matrix))
+colnames(dens_df) <- c("Cluster1", "Cluster2", "Densita")
+
+# Etichette
+cluster_labels <- sapply(1:n_comm, function(i) {
+  nodi <- V(g_tropes)$name[V(g_tropes)$community == i]
+  n_tot <- length(nodi)
+  paste0(paste(head(nodi, 3), collapse = ", "), " (+"," altri ", n_tot - 3, ")")
+})
+names(cluster_labels) <- 1:n_comm
+
+# Ordine per size decrescente
+comm_sizes_vec <- as.integer(comm_sizes[as.character(1:n_comm)])
+ordine_size <- order(comm_sizes_vec, decreasing = TRUE)
+
+dens_df$Cluster1 <- factor(
+  cluster_labels[as.character(dens_df$Cluster1)],
+  levels = cluster_labels[ordine_size]
+)
+dens_df$Cluster2 <- factor(
+  cluster_labels[as.character(dens_df$Cluster2)],
+  levels = cluster_labels[ordine_size]
+)
+
+# Heatmap
+ggplot(dens_df, aes(x = Cluster1, y = Cluster2, fill = Densita)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(Densita, 2)), size = 2.2, color = "black") +
+  scale_fill_gradient(low = "white", high = "darkred", trans = "sqrt" ) +
   labs(
-    title = "Rete di cooccorrenza tra tropes",
-    subtitle = "Lo spessore degli archi rappresenta la frequenza di film in cui accade",
-    edge_width = "Film con questi tropes"
+    title = "Densità di connessione tra cluster (community)",
+    subtitle = paste("Modularità complessiva:", round(modularity(comm), 3)),
+    x = "Cluster (nodi principali)",
+    y = "Cluster (nodi principali)",
+    fill = "Densità"
   ) +
-  theme_void()
-
-#Trova max TROPE (Death, ma dai)
-top_50_tropes <- coppia_film_tropes %>%
-  count(trope, sort = TRUE) %>%
-  slice_max(n, n = 50)
-head(top_50_tropes, 50)
-print(top_50_tropes)
-
-
-
-
-
-
-
-
-
-#DELETE ALL
-#PRIMA SOURCE
-url <- "https://huggingface.co/datasets/electricsheepeurope/europe-owid-proportion-of-labor-force-who-are-women/resolve/main/data/train-00000-of-00001.parquet"
-hugface <- read_parquet(url)
-head(hugface)
-
-#Seconda surce GITHUB
-github<- read.csv("Merged_Dataset.csv")
-
-#Ultima surce
-eurostat<- read.csv("Eurostat.csv")
-
-#Dataframe per solo le nazioni che mi interessano
-hugface_piccolo <- hugface %>%
-  filter(country_iso3 %in% c(
-    "ITA", "FRA", "NOR", "IRL",
-    "GRC", "FIN", "ALB", "DEU"
-  ))
-
-#Dataframe per solo le nazioni che mi interessano
-github_piccolo <- github %>%
-  filter(Country %in% c(
-    "Italy", "France", "Norway", "Ireland",
-    "Greece", "Finland", "Albania", "Germany"
-  ))
-
-#Dataframe per solo le nazioni che mi interessano
-eurostat_piccolo <- eurostat %>%
-  filter(Geopolitical.entity..reporting. %in% c(
-    "Italy", "France", "Norway", "Ireland",
-    "Greece", "Finland", "Albania", "Germany"
-  ))
-
-
-#Grafo 1 a linee 
-ggplot(
-  eurostat_piccolo,
-  aes(
-    x = TIME_PERIOD,
-    y = OBS_VALUE,
-    color = Geopolitical.entity..reporting.
-  )
-) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 1.5) +
-  labs(
-    title = "% of all tertiary education graduates in STEM education fields",
-    x = "Anno",
-    y = "% lauree ♀ in STEM"
-  ) +
-  theme_classic()
-
-#Trova minima value per ogni anno
-minn<-eurostat_piccolo %>%
-  group_by(TIME_PERIOD) %>%
-  slice_min(`OBS_VALUE`, n = 1, with_ties = FALSE) %>%
-  select(TIME_PERIOD, Geopolitical.entity..reporting., OBS_VALUE)
-print(minn, n=50)
-
-#Trova minima valueper ogni anno
-maxx<-eurostat_piccolo %>%
-  group_by(TIME_PERIOD) %>%
-  slice_max(OBS_VALUE, n = 1, with_ties = FALSE) %>%
-  select(TIME_PERIOD, Geopolitical.entity..reporting., OBS_VALUE) 
-print(maxx, n=50)
-
-#Grafo 2
-
-# Archi Paese -> Anno
-edges <- github_piccolo %>%
-  transmute(
-    from = Country,
-    to = as.character(Year),
-    weight = Female_Researchers
-  )
-
-# grafo
-ggraph(g, layout = "bipartite") +
-  
-  # ARCHI
-  geom_edge_link(
-    aes(width = weight),
-    alpha = 0.5,
-    colour = "grey50"
-  ) +
-  
-  # NODI
-  geom_node_point(
-    aes(
-      shape = type,
-      colour = type
-    ),
-    size = 7
-  ) +
-  
-  # ETICHETTE
-  geom_node_text(
-    aes(label = name),
-    repel = TRUE,
-    size = 3,
-    box.padding = 1,
-    point.padding = 0.25
-  ) +
-  
-  # Spessore archi
-  scale_edge_width(
-    range = c(0.1, 10)
-  ) +
-  
-  # Forme paesi/anni
-  scale_shape_manual(
-    name = "Tipo di nodo",
-    values = c(
-      "FALSE" = 18,
-      "TRUE" = 16
-    ),
-    labels = c(
-      "FALSE" = "Paese",
-      "TRUE" = "Anno"
-    )
-  ) +
-  
-  # Colori paesi/anni
-  scale_colour_manual(
-    name = "Tipo di nodo",
-    values = c(
-      "FALSE" = "blue",
-      "TRUE" = "pink"
-    ),
-    labels = c(
-      "FALSE" = "Paese",
-      "TRUE" = "Anno"
-    )
-  ) +
-  
-  labs(
-    title = "Rete Paese–Anno della percentuale di ricercatrici nell'ambito STEM",
-    subtitle = "Lo spessore degli archi rappresenta la percentuale di donne ricercatrici in STEM",
-    edge_width = "% donne STEM"
-  ) +
-  
-  theme_void() +
-  
+  theme_dark() +
   theme(
-    plot.title = element_text(
-      size = 18,
-      face = "bold",
-      hjust = 0.5
-    ),
-    plot.subtitle = element_text(
-      size = 11,
-      face = "italic",
-      hjust = 0.5
-    ),
-    legend.position = "top"
-  )
-
-#Grafo 3 
-ggplot(
-  hugface_piccolo,
-  aes(
-    x = year,
-    y = `Share of the labor force that is female`,
-    color = country_iso3
-  )
-) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 1.5) +
-  labs(
-    title = "% donne nella forza lavoro",
-    x = "Anno",
-    y = "% donne",
-    color = "Paese"
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
+    axis.text.y = element_text(size = 7)
   ) +
-   theme_classic() 
+  coord_fixed()
