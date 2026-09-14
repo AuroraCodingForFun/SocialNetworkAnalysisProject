@@ -9,22 +9,17 @@ library(scales)
 library(arrow)
 library(RColorBrewer)
 
-#DATASET 1
-url <- "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2022/2022-11-01/horror_movies.csv"
-horrors <- read.csv(url, stringsAsFactors = FALSE)
-head(horrors);
-
-#dataset2
+#dataset
 url2 <- "https://raw.githubusercontent.com/sundeepblue/movie_rating_prediction/master/movie_metadata.csv"
 tropes <- read.csv(url2, stringsAsFactors = FALSE)
 
 #Pulizia dataset per avere solo film horror
 htropes <- tropes[tropes$plot_keywords != "" & !is.na(tropes$plot_keywords) & grepl("Horror", tropes$genres), ]
 
-#Dividiamo le keyword separate
+#Separa keywor
 lista_tropes <- strsplit(htropes$plot_keywords, "\\|")
 
-#Creazione della tabella di coppia (film - trope)
+#Creazione della tabella di coppia (film+trope)
 coppia_film_tropes <- data.frame(
   film = rep(htropes$movie_title, sapply(lista_tropes, length)),
   trope = trimws(unlist(lista_tropes)),
@@ -86,7 +81,7 @@ ggraph(g_tropes, layout = "kk") +
   ) +
   theme_void()
 
-#Trova max TROPE
+#Trova max TROPE degree e strength
 
 trope_stats <- data.frame(
   trope = V(g_tropes)$name,
@@ -96,6 +91,26 @@ trope_stats <- data.frame(
   arrange(desc(strength))
 
 head(trope_stats, 50)
+
+#Trova BETWEENESSS
+comp <- components(g_tropes)
+cat("Numero di componenti:", comp$no, "\n")
+print(table(comp$csize))
+giant_id <- which.max(comp$csize)
+g_giant <- induced_subgraph(g_tropes, which(comp$membership == giant_id))
+cat("Nodi nella componente gigante:", vcount(g_giant), "\n")
+
+btw <- betweenness(g_giant, weights = E(g_giant)$weight, normalized = TRUE)
+
+btw_df <- data.frame(
+  trope = V(g_giant)$name,
+  betweenness = round(btw, 4)
+) %>%
+  arrange(desc(betweenness))
+
+head(btw_df, 15)
+
+
 
 #GRAFO 2
 
