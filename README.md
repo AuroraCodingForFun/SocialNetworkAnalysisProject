@@ -4,6 +4,7 @@
 
 - Rplot.png ->Grafo 1
   <br>
+  
   <img src= "Rplot.png" width="500" align="center">
 - Rplot01.png ->Grafo 2
   <br>
