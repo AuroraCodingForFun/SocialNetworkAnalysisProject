@@ -2,6 +2,9 @@
      👻Progetto di Social Network Analysis sulla co-occorrenza dei trope nei film Horror👻
 </h1>
 
+<h2> For more information about this project check out <a href="https://auroracodingforfun.github.io/BlogSite/2026/10/11/Social-Network-Analysis.html"> my Blog</a>!</h2>
+
+
 - Rplot.png ->Grafo 1
   <br>
   
