@@ -7,7 +7,9 @@
 
 - Rplot.png ->Grafo 1
   <br>
-  
+  <img src="https://raw.githubusercontent.com/AuroraCodingForFun/SocialNetworkAnalysisProject/refs/heads/master/Rplot.png" width="500" align="center">
+<img src="https://raw.githubusercontent.com/AuroraCodingForFun/SocialNetworkAnalysisProject/refs/heads/master/Rplot01.png" width="500" align="center">
+
   <img src= "Rplot.png" width="500" align="center">
 - Rplot01.png ->Grafo 2
   <br>
